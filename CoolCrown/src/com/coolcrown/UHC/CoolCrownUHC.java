@@ -48,6 +48,8 @@ public class CoolCrownUHC extends JavaPlugin {
                     for (Entity entity : playersInRadius){
                         if (entity instanceof Player){
                             Player radiusPlayer = (Player) entity;
+                            if (injured.contains(radiusPlayer.getUniqueId())) continue;
+                            if (radiusPlayer.getGameMode() != GameMode.SURVIVAL) continue;
                             if (!playerTeam.hasEntry(radiusPlayer.getDisplayName()));
                             else {
                                 if (p.getHealth() < radiusPlayer.getHealth() - HEAL_RATE )

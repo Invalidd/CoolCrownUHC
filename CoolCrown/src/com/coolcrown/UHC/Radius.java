@@ -11,7 +11,7 @@ public class Radius implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         Player p = (Player) sender;
         if (args.length == 0) {
-            p.sendRawMessage(ChatColor.GREEN+"" +ChatColor.BOLD+ "[CoolCrown] " + ChatColor.GOLD + "The heal raidus is " + ChatColor.BLUE + CoolCrownUHC.HEAL_RATE);
+            p.sendRawMessage(ChatColor.GREEN+"" +ChatColor.BOLD+ "[CoolCrown] " + ChatColor.GOLD + "The heal radius is " + ChatColor.BLUE + CoolCrownUHC.HEAL_RADIUS);
             return true;
         }
         try {

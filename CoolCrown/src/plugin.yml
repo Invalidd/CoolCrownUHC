@@ -6,9 +6,8 @@ commands:
   healradius:
     description: Sets the team heal radius
     usage: /<command>
+    permission: coolcrown.commands
   healrate:
     description: Sets the player heal rate
     usage: /<command>
-  revive:
-    description: Revives u
-    usage: /<command>
+    permission: coolcrown.commands
