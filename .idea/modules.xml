@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="ProjectModuleManager">
-    <modules>
-      <module fileurl="file://$PROJECT_DIR$/CoolCrown/CoolCrown.iml" filepath="$PROJECT_DIR$/CoolCrown/CoolCrown.iml" />
-      <module fileurl="file://$PROJECT_DIR$/CoolCrownUHC.iml" filepath="$PROJECT_DIR$/CoolCrownUHC.iml" />
-    </modules>
-  </component>
-</project>
