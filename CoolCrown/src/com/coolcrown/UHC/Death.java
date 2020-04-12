@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import net.minecraft.server.v1_15_R1.Blocks;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -40,7 +38,11 @@ public class Death implements Listener {
             player.setSneaking(false);
             player.setGlowing(false);
             CoolCrownUHC.injured.remove(player.getUniqueId());
-            player.sendTitle(ChatColor.DARK_RED+"" +ChatColor.BOLD+ "You died!" , ChatColor.RED + event.getDeathMessage() ,0,50,20);
+            player.sendTitle(ChatColor.DARK_RED+"" +ChatColor.BOLD+ "You died!" , ChatColor.RED + event.getDeathMessage() ,0,120,20);
+            for (Player p : Bukkit.getServer().getOnlinePlayers()) {
+                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 100, 0);
+            }
+            player.setGameMode(GameMode.SPECTATOR);
             killers.remove(player.getDisplayName());
             return;
         }
@@ -53,12 +55,10 @@ public class Death implements Listener {
             }
             return;
         }
-        if (player.getKiller() != null) {
-            player.sendTitle(ChatColor.DARK_RED+"" +ChatColor.BOLD+ "You're injured!" , ChatColor.GOLD + "A team can revive you with 7 hearts and a golden block!" ,0,100,20);
-        }
+        player.sendTitle(ChatColor.DARK_RED+"" +ChatColor.BOLD+ "You're injured!" , ChatColor.GOLD + "A team member can revive you with 7 hearts and a golden block!" ,0,120,20);
+        player.playSound(player.getLocation(), Sound.ENTITY_BLAZE_DEATH, 100, 0);
         event.setDeathMessage(null);
         player.setHealth(20);
-        player.sendMessage(ChatColor.RED + "You have been injured!");
         CoolCrownUHC.injured.add(player.getUniqueId());
         player.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 10000000, 1));
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10000000, 1));
@@ -173,6 +173,11 @@ public class Death implements Listener {
 
     @EventHandler
     public void onTeleport(PlayerTeleportEvent event) {
+        if (event.getPlayer().getGameMode() == GameMode.SPECTATOR){
+            event.getPlayer().sendTitle(ChatColor.GREEN+"" +ChatColor.BOLD+ "" , ChatColor.RED + "Teleportation is disabled for dead players!",0,100,20);
+            event.getPlayer().playSound(event.getPlayer().getLocation(), Sound.ITEM_SHIELD_BREAK, 100, 0);
+            event.setCancelled(true);
+        }
         Player player = event.getPlayer();
         if (CoolCrownUHC.injured.contains(player.getUniqueId())) {
             player.sendMessage(ChatColor.RED + "You can't teleport while injured!");
