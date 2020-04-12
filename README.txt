@@ -1,0 +1,1 @@
+An UHC addon that lets players heal if they're within the radius of their team members. Players can also revive their team members while the team member is injured. 

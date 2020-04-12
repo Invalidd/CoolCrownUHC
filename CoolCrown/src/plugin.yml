@@ -1,0 +1,14 @@
+name: CoolCrownUHC
+description: Cool Crown Clan UHC Plugin
+version: 1.0
+main: com.coolcrown.UHC.CoolCrownUHC
+commands:
+  healradius:
+    description: Sets the team heal radius
+    usage: /<command>
+  healrate:
+    description: Sets the player heal rate
+    usage: /<command>
+  revive:
+    description: Revives u
+    usage: /<command>
