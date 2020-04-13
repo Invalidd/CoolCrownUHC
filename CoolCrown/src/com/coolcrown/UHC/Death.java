@@ -32,7 +32,7 @@ public class Death implements Listener {
     public static HashMap<UUID, BossBar> progressTrackers = new HashMap<UUID, BossBar>();
 
     @EventHandler
-    public void onEntityDamage(PlayerDeathEvent event) {
+    public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
 
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
@@ -70,6 +70,48 @@ public class Death implements Listener {
         CoolCrownUHC.injured.add(player.getUniqueId());
         progressTrackers.put(player.getUniqueId(), progress);
         deathMessages.put(player.getUniqueId(), event.getDeathMessage());
+
+        Team playerTeam = null;
+
+        for (Team t: player.getScoreboard().getTeams()){
+            if (t.hasEntry(player.getDisplayName())){
+                playerTeam = t;
+                break;
+            }
+        }
+
+        boolean teamEliminated = true;
+        for (String name: playerTeam.getEntries()) {
+            Player teamMember = null;
+            try {
+                teamMember = Bukkit.getPlayer(name);
+            } catch (Exception e) {
+                continue;
+            }
+
+            if (teamMember.getGameMode() != GameMode.SPECTATOR &&
+                    !CoolCrownUHC.injured.contains(teamMember.getUniqueId())) {
+                teamEliminated = false;
+            }
+        }
+
+        if (teamEliminated) {
+            for (String name : playerTeam.getEntries()) {
+                Player teamMember = null;
+                try {
+                    teamMember = Bukkit.getPlayer(name);
+                } catch (Exception e) {
+                    continue;
+                }
+
+                if (CoolCrownUHC.injured.contains(teamMember.getUniqueId())) {
+                    teamMember.setHealth(0);
+                }
+            }
+
+            event.setDeathMessage(null);
+            return;
+        }
 
         player.sendTitle(ChatColor.DARK_RED + "" + ChatColor.BOLD + "You're injured!" ,
                 ChatColor.GOLD + "A team member can revive you with 7 hearts and a golden block!",
@@ -116,6 +158,7 @@ public class Death implements Listener {
                 for (Team t: player.getScoreboard().getTeams()){
                     if (t.hasEntry(player.getDisplayName())){
                         playerTeam = t;
+                        break;
                     }
                 }
 
