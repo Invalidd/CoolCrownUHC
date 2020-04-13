@@ -67,18 +67,27 @@ public class Death implements Listener {
         progress.setProgress(0);
         progress.addPlayer(player);
 
-        CoolCrownUHC.injured.add(player.getUniqueId());
-        progressTrackers.put(player.getUniqueId(), progress);
-        deathMessages.put(player.getUniqueId(), event.getDeathMessage());
-
         Team playerTeam = null;
-
+        Team killerTeam= null;
+        Player playerKiller= player.getKiller();
         for (Team t: player.getScoreboard().getTeams()){
             if (t.hasEntry(player.getDisplayName())){
                 playerTeam = t;
-                break;
+            }
+            if(playerKiller instanceof Player && t.hasEntry(player.getKiller().getDisplayName())){
+                killerTeam = t;
             }
         }
+
+        CoolCrownUHC.injured.add(player.getUniqueId());
+        progressTrackers.put(player.getUniqueId(), progress);
+
+        String deathMessage = event.getDeathMessage();
+        deathMessage = deathMessage.replace(player.getDisplayName(), playerTeam.getColor() + player.getDisplayName() + ChatColor.WHITE);
+        if (killerTeam != null){
+            deathMessage = deathMessage.replace(playerKiller.getDisplayName(), killerTeam.getColor() + player.getKiller().getDisplayName() + ChatColor.WHITE);
+        }
+        deathMessages.put(player.getUniqueId(), deathMessage);
 
         boolean teamEliminated = true;
         for (String name: playerTeam.getEntries()) {
