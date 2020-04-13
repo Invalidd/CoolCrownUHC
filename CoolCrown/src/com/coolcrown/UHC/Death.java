@@ -40,6 +40,9 @@ public class Death implements Listener {
         }
 
         if (CoolCrownUHC.injured.contains(player.getUniqueId())){
+            event.setDeathMessage(deathMessages.get(player.getUniqueId()));
+            deathMessages.remove(player.getUniqueId());
+
             player.setSneaking(false);
             player.setGlowing(false);
 
@@ -56,7 +59,6 @@ public class Death implements Listener {
             }
 
             player.setGameMode(GameMode.SPECTATOR);
-            deathMessages.remove(player.getUniqueId());
             return;
         }
 
@@ -90,6 +92,12 @@ public class Death implements Listener {
         player.addPotionEffect(new PotionEffect(PotionEffectType.HEAL, 1, 10));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 10000000, 255));
         player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 10000000, 255));
+
+        event.setKeepInventory(true);
+        event.getDrops().clear();
+
+        event.setKeepLevel(true);
+        event.setDroppedExp(0);
     }
 
     @EventHandler
