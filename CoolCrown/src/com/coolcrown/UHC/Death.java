@@ -1,6 +1,12 @@
 package com.coolcrown.UHC;
 
+import net.minecraft.server.v1_15_R1.EntityPlayer;
+import net.minecraft.server.v1_15_R1.PacketPlayOutEntityStatus;
 import org.bukkit.*;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
+import org.bukkit.craftbukkit.v1_15_R1.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,108 +22,155 @@ import org.bukkit.scoreboard.Team;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.UUID;
 
 
 public class Death implements Listener {
-
-    public ArrayList<String> remove = new ArrayList<String>();
-    HashMap<String, Float> saturation = new HashMap<String, Float>();
-    HashMap<String, Integer> foodlevel = new HashMap<String, Integer>();
-    HashMap<String, String> killers= new HashMap<String, String>();
+    HashMap<UUID, Float> saturation = new HashMap<UUID, Float>();
+    HashMap<UUID, Integer> foodLevel = new HashMap<UUID, Integer>();
+    HashMap<UUID, String> deathMessages = new HashMap<UUID, String>();
+    public static HashMap<UUID, BossBar> progressTrackers = new HashMap<UUID, BossBar>();
 
     @EventHandler
     public void onEntityDamage(PlayerDeathEvent event) {
         Player player = event.getEntity();
+
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
             return;
         }
+
         if (CoolCrownUHC.injured.contains(player.getUniqueId())){
             player.setSneaking(false);
             player.setGlowing(false);
+
             CoolCrownUHC.injured.remove(player.getUniqueId());
-            player.sendTitle(ChatColor.DARK_RED+"" +ChatColor.BOLD+ "You died!" , ChatColor.BLUE + "Please join the spectator call. Remember to not ghost as a spectator!" ,0,120,20);
+            progressTrackers.get(player.getUniqueId()).removeAll();
+            progressTrackers.remove(player.getUniqueId());
+
+            player.sendTitle(ChatColor.DARK_RED + "" + ChatColor.BOLD + "You died!",
+                    ChatColor.BLUE + "Please join the spectator call. Remember to not ghost as a spectator!",
+                    0,120,20);
+
             for (Player p : Bukkit.getServer().getOnlinePlayers()) {
                 p.getWorld().playSound(p.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 200, 3);
             }
+
             player.setGameMode(GameMode.SPECTATOR);
-            killers.remove(player.getDisplayName());
+            deathMessages.remove(player.getUniqueId());
             return;
         }
-        killers.put(player.getDisplayName(), event.getDeathMessage());
-        if (CoolCrownUHC.injured.contains(player.getUniqueId())) {
-            player.setGlowing(false);
-            CoolCrownUHC.injured.remove(player.getUniqueId());
-            if (!(player.getKiller() instanceof Player)) {
-                return;
-            }
-            return;
-        }
-        player.sendTitle(ChatColor.DARK_RED+"" +ChatColor.BOLD+ "You're injured!" , ChatColor.GOLD + "A team member can revive you with 7 hearts and a golden block!" ,0,120,20);
+
+        BossBar progress = Bukkit.createBossBar(player.getDisplayName() + "'s Revival Progress",
+                BarColor.RED, BarStyle.SOLID);
+        progress.setProgress(0);
+        progress.addPlayer(player);
+
+        CoolCrownUHC.injured.add(player.getUniqueId());
+        progressTrackers.put(player.getUniqueId(), progress);
+        deathMessages.put(player.getUniqueId(), event.getDeathMessage());
+
+        player.sendTitle(ChatColor.DARK_RED + "" + ChatColor.BOLD + "You're injured!" ,
+                ChatColor.GOLD + "A team member can revive you with 7 hearts and a golden block!",
+                0,120,20);
         player.playSound(player.getLocation(), Sound.ENTITY_BLAZE_DEATH, 200, 0);
         event.setDeathMessage(null);
 
-        player.setHealth(20);
-        player.setSaturation(0);
+        saturation.put(player.getUniqueId(), player.getSaturation());
+        foodLevel.put(player.getUniqueId(), player.getFoodLevel());
 
-        CoolCrownUHC.injured.add(player.getUniqueId());
+        player.setHealth(20);
+        player.setFoodLevel(1);
+        player.setGlowing(true);
+        player.setSneaking(true);
+
         player.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 10000000, 1));
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10000000, 1));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, 10000000, 128));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 10000000, 4));
         player.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, 10000000, 4));
         player.addPotionEffect(new PotionEffect(PotionEffectType.HEAL, 1, 10));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 10000000, 255));
         player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 10000000, 255));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 10000000, 255));
-
-
-        saturation.put(player.getUniqueId().toString(), player.getSaturation());
-        foodlevel.put(player.getUniqueId().toString(), player.getFoodLevel());
-        player.setFoodLevel(1);
-        player.setGlowing(true);
     }
 
     @EventHandler
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
         Player player = event.getPlayer();
         Entity entity = event.getRightClicked();
+
         if (entity instanceof Player) {
             if (CoolCrownUHC.injured.contains(entity.getUniqueId())) {
-                Player injure = (Player) event.getRightClicked();
+                Player injured = (Player) event.getRightClicked();
+                BossBar progress = progressTrackers.get(injured.getUniqueId());
+
                 if (CoolCrownUHC.injured.contains(player.getUniqueId())) return;
                 Team playerTeam = null;
+
                 for (Team t: player.getScoreboard().getTeams()){
                     if (t.hasEntry(player.getDisplayName())){
                         playerTeam = t;
                     }
                 }
-                if (!playerTeam.hasEntry(injure.getDisplayName())) return;
-                if (player.getHealth() < 13.70){
-                    player.sendTitle(ChatColor.GREEN+"" +ChatColor.BOLD+ "" , ChatColor.GOLD + "You need to have at least 7 hearts to revive a player!",0,50,20);
-                    return;
-                }
-                if(player.getInventory().getItemInMainHand().getType() != Material.GOLD_BLOCK && player.getInventory().getItemInOffHand().getType() != Material.GOLD_BLOCK)
-                {
-                    player.sendTitle(ChatColor.GREEN+"" +ChatColor.BOLD+ "" , ChatColor.GOLD + "You need to hold a gold block to revive a player!",0,50,20);
+
+                if (!playerTeam.hasEntry(injured.getDisplayName())) return;
+
+                if (player.getHealth() < 13.75){
+                    player.sendTitle(ChatColor.GREEN + "" + ChatColor.BOLD + "" ,
+                            ChatColor.GOLD + "You need to have at least 7 hearts to revive a player!",
+                            0,50,20);
                     return;
                 }
 
-                injure.setFoodLevel(injure.getFoodLevel() + 1);
-                injure.getWorld().spawnParticle(Particle.HEART, injure.getLocation().add((new Random().nextFloat() * 2) - 1, 1, (new Random().nextFloat() * 2) - 1), 1);
-                if (injure.getFoodLevel() == 20) {
-                    for (PotionEffect pe : injure.getActivePotionEffects()) {
-                        injure.removePotionEffect(pe.getType());
+                if (player.getInventory().getItemInMainHand().getType() != Material.GOLD_BLOCK &&
+                        player.getInventory().getItemInOffHand().getType() != Material.GOLD_BLOCK)
+                {
+                    player.sendTitle(ChatColor.GREEN + "" + ChatColor.BOLD + "",
+                            ChatColor.GOLD + "You need to hold a gold block to revive a player!",
+                            0,50,20);
+                    return;
+                }
+
+                progress.addPlayer(player);
+                progress.setProgress(Math.min(progress.getProgress() + 0.02, 1));
+
+                injured.getWorld().spawnParticle(Particle.HEART,
+                        injured.getLocation().add((
+                                new Random().nextFloat() * 2) - 1,
+                                1,
+                                (new Random().nextFloat() * 2) - 1), 1
+                );
+
+                if (progress.getProgress() == 1) {
+                    for (PotionEffect pe : injured.getActivePotionEffects()) {
+                        injured.removePotionEffect(pe.getType());
                     }
-                    player.setHealth(player.getHealth()-10);
-                    injure.setHealth(player.getHealth());
-                    injure.setSneaking(false);
-                    injure.setGlowing(false);
-                    injure.sendTitle(ChatColor.GREEN+"" +ChatColor.BOLD+ "" , ChatColor.GREEN + "You have been revived by " + player.getDisplayName(),0,50,20);
-                    player.sendTitle(ChatColor.GREEN+"" +ChatColor.BOLD+ "" , ChatColor.GREEN + "You have revived " + injure.getDisplayName(),0,50,20);
+
+                    player.setHealth(player.getHealth() - 6);
+                    injured.setHealth(1);
+                    injured.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 20, 0));
+                    injured.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 5 * 20, 1));
+
+                    injured.setSneaking(false);
+                    injured.setGlowing(false);
+
+                    EntityPlayer ep = ((CraftPlayer)injured).getHandle();
+                    PacketPlayOutEntityStatus status = new PacketPlayOutEntityStatus(ep, (byte) 35);
+                    ep.playerConnection.sendPacket(status);
+
+                    injured.sendTitle(ChatColor.GREEN + "" +ChatColor.BOLD + "" ,
+                            ChatColor.GREEN + "You have been revived by " + player.getDisplayName(),
+                            0,50,20);
+                    player.sendTitle(ChatColor.GREEN + "" + ChatColor.BOLD + "" ,
+                            ChatColor.GREEN + "You have revived " + injured.getDisplayName(),
+                            0,50,20);
+
                     player.getInventory().removeItem(new ItemStack(Material.GOLD_BLOCK,1));
-                    CoolCrownUHC.injured.remove(injure.getUniqueId());
-                    injure.setFoodLevel(foodlevel.get(injure.getUniqueId().toString()));
-                    injure.setSaturation(saturation.get(injure.getUniqueId().toString()));
+
+                    CoolCrownUHC.injured.remove(injured.getUniqueId());
+                    progress.removeAll();
+                    progressTrackers.remove(player.getUniqueId());
+
+                    injured.setFoodLevel(foodLevel.get(injured.getUniqueId()));
+                    injured.setSaturation(saturation.get(injured.getUniqueId()));
                 }
             }
         }
@@ -127,15 +180,6 @@ public class Death implements Listener {
     public void onInteract(PlayerInteractEvent event){
         if (CoolCrownUHC.injured.contains(event.getPlayer().getUniqueId())){
             event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onInjuredJump(PlayerMoveEvent event){
-        if (CoolCrownUHC.injured.contains(event.getPlayer().getUniqueId())){
-            if (event.getPlayer().getVelocity().getY() > 1){
-                event.setCancelled(true);
-            }
         }
     }
 
@@ -162,23 +206,4 @@ public class Death implements Listener {
             event.setCancelled(true);
         }
     }
-
-    @EventHandler
-    public void onCommand(PlayerCommandPreprocessEvent event) {
-        Player player = event.getPlayer();
-        if (CoolCrownUHC.injured.contains(player.getUniqueId())) {
-            player.sendMessage(ChatColor.RED + "You can't use commands while injured!");
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onTeleport(PlayerTeleportEvent event) {
-        Player player = event.getPlayer();
-        if (CoolCrownUHC.injured.contains(player.getUniqueId())) {
-            player.sendMessage(ChatColor.RED + "You can't teleport while injured!");
-            event.setCancelled(true);
-        }
-    }
-
 }
