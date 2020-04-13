@@ -1,23 +1,21 @@
 package com.coolcrown.UHC;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import net.minecraft.server.v1_15_R1.Blocks;
 import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Team;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Random;
 
 
 public class Death implements Listener {
@@ -57,7 +55,10 @@ public class Death implements Listener {
         player.sendTitle(ChatColor.DARK_RED+"" +ChatColor.BOLD+ "You're injured!" , ChatColor.GOLD + "A team member can revive you with 7 hearts and a golden block!" ,0,120,20);
         player.playSound(player.getLocation(), Sound.ENTITY_BLAZE_DEATH, 200, 0);
         event.setDeathMessage(null);
+
         player.setHealth(20);
+        player.setSaturation(0);
+
         CoolCrownUHC.injured.add(player.getUniqueId());
         player.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 10000000, 1));
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10000000, 1));
@@ -67,6 +68,7 @@ public class Death implements Listener {
         player.addPotionEffect(new PotionEffect(PotionEffectType.HEAL, 1, 10));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 10000000, 255));
         player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 10000000, 255));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 10000000, 255));
 
 
         saturation.put(player.getUniqueId().toString(), player.getSaturation());
@@ -101,7 +103,7 @@ public class Death implements Listener {
                 }
 
                 injure.setFoodLevel(injure.getFoodLevel() + 1);
-                injure.getWorld().spawnParticle(Particle.HEART, injure.getLocation(), 1);
+                injure.getWorld().spawnParticle(Particle.HEART, injure.getLocation().add((new Random().nextFloat() * 2) - 1, 1, (new Random().nextFloat() * 2) - 1), 1);
                 if (injure.getFoodLevel() == 20) {
                     for (PotionEffect pe : injure.getActivePotionEffects()) {
                         injure.removePotionEffect(pe.getType());
