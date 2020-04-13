@@ -91,14 +91,11 @@ public class Death implements Listener {
 
         boolean teamEliminated = true;
         for (String name: playerTeam.getEntries()) {
-            Player teamMember = null;
-            try {
-                teamMember = Bukkit.getPlayer(name);
-            } catch (Exception e) {
-                continue;
-            }
+            Player teamMember = Bukkit.getPlayer(name);
 
-            if (teamMember.getGameMode() != GameMode.SPECTATOR &&
+            if (teamMember != null &&
+                    teamMember.isOnline() &&
+                    teamMember.getGameMode() != GameMode.SPECTATOR &&
                     !CoolCrownUHC.injured.contains(teamMember.getUniqueId())) {
                 teamEliminated = false;
             }
@@ -106,14 +103,11 @@ public class Death implements Listener {
 
         if (teamEliminated) {
             for (String name : playerTeam.getEntries()) {
-                Player teamMember = null;
-                try {
-                    teamMember = Bukkit.getPlayer(name);
-                } catch (Exception e) {
-                    continue;
-                }
+                Player teamMember = Bukkit.getPlayer(name);
 
-                if (CoolCrownUHC.injured.contains(teamMember.getUniqueId())) {
+                if (teamMember != null &&
+                        teamMember.isOnline() &&
+                        CoolCrownUHC.injured.contains(teamMember.getUniqueId())) {
                     teamMember.setHealth(0);
                 }
             }
@@ -136,8 +130,8 @@ public class Death implements Listener {
         player.setGlowing(true);
         player.setSneaking(true);
 
-        player.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 10000000, 1));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10000000, 1));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 10000000, 0));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10000000, 0));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 10000000, 4));
         player.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, 10000000, 4));
         player.addPotionEffect(new PotionEffect(PotionEffectType.HEAL, 1, 10));
@@ -223,7 +217,12 @@ public class Death implements Listener {
                             ChatColor.GREEN + "You have revived " + injured.getDisplayName(),
                             0,50,20);
 
-                    player.getInventory().removeItem(new ItemStack(Material.GOLD_BLOCK,1));
+                    if (player.getInventory().getItemInOffHand().getType() == Material.GOLD_BLOCK) {
+                        int goldInHand = player.getInventory().getItemInOffHand().getAmount();
+                        player.getInventory().getItemInOffHand().setAmount(goldInHand - 1);
+                    } else {
+                        player.getInventory().removeItem(new ItemStack(Material.GOLD_BLOCK, 1));
+                    }
 
                     CoolCrownUHC.injured.remove(injured.getUniqueId());
                     progress.removeAll();
